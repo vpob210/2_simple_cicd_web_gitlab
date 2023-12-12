@@ -1,0 +1,15 @@
+stages:
+  - deploy
+
+deploy_to_web_server:
+  stage: deploy
+  script:
+    - echo "Deploying to web server"
+    - mkdir -p /root/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r'  > ~/.ssh/id_web
+    - chmod 600 ~/.ssh/id_web
+    - scp -o StrictHostKeyChecking=no -r -i ~/.ssh/id_web * $SSH_USER@192.168.66.191:~/2_simple_cicd_web/
+    - ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_web $SSH_USER@192.168.66.191 "docker stop my-node-js-app-2 || true && docker rm my-node-js-app-2 || true && docker rmi my-node-js-app-2 || true"
+    - ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_web $SSH_USER@192.168.66.191 "cd 2_simple_cicd_web && docker build -t my-node-js-app-2 . && docker run -d -p 88:3000 --name my-node-js-app-2 my-node-js-app-2"
+  only:
+    - main
